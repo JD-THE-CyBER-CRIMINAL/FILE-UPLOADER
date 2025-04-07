@@ -1,21 +1,66 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>File Upload and Download</title>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <title>Upload & Share File</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      text-align: center;
+      margin-top: 50px;
+    }
+    input[type="file"] {
+      margin: 20px 0;
+    }
+    #link {
+      margin-top: 20px;
+      word-break: break-all;
+      color: green;
+    }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Upload a File</h1>
-        <form action="upload.php" method="POST" enctype="multipart/form-data">
-            <input type="file" name="file" required>
-            <button type="submit">Upload</button>
-        </form>
+  <h2>Upload File & Get Shareable Link</h2>
+  <input type="file" id="fileInput">
+  <br>
+  <button onclick="uploadFile()">Upload</button>
 
-        <div id="message"></div>
-        <div id="downloadLink"></div>
-    </div>
+  <div id="status"></div>
+  <div id="link"></div>
+
+  <script>
+    async function uploadFile() {
+      const file = document.getElementById('fileInput').files[0];
+      if (!file) return alert("Please select a file.");
+
+      document.getElementById('status').innerText = "Uploading...";
+
+      try {
+        // Get the best server
+        const serverRes = await fetch('https://api.gofile.io/getServer');
+        const server = (await serverRes.json()).data.server;
+
+        // Upload the file
+        const formData = new FormData();
+        formData.append("file", file);
+
+        const uploadRes = await fetch(`https://${server}.gofile.io/uploadFile`, {
+          method: 'POST',
+          body: formData
+        });
+
+        const data = await uploadRes.json();
+        if (data.status === "ok") {
+          const link = data.data.downloadPage;
+          document.getElementById('status').innerText = "Uploaded successfully!";
+          document.getElementById('link').innerHTML = `Shareable Link: <a href="${link}" target="_blank">${link}</a>`;
+        } else {
+          document.getElementById('status').innerText = "Upload failed.";
+        }
+      } catch (error) {
+        document.getElementById('status').innerText = "Error: " + error.message;
+      }
+    }
+  </script>
 </body>
 </html>
